@@ -72,14 +72,7 @@
       }
 
       .status {
-        margin: 10px 0 20px 0;
-        min-height: 18px;
-        font-size: 13px;
-        color: var(--text-muted);
-      }
-
-      .look {
-        margin: 10px 0 0 0;
+        margin: 20px 0 0;
         min-height: 18px;
         font-size: 13px;
         color: var(--text-muted);
@@ -189,13 +182,13 @@
       <h1 class="title">Portfolio Project 1</h1>
       <p class="subtitle">Carnival Ride</p>
 
-      <p class="look" id="look"></p>
       <p class="status" id="status">Loading&hellip;</p>
       <div class="progress" id="progress"><div class="progress-fill" id="progress-fill"></div></div>
 
       <div class="actions">
         <button class="btn" id="switch-view" disabled>Switch View</button>
         <button class="btn btn-primary" id="start-ride" disabled>Start Ride</button>
+        <button class="btn" id="day-night" aria-pressed="false" disabled>Night Mode</button>
         <button class="btn" id="enter-vr" disabled>Enter VR</button>
       </div>
     </aside>
@@ -208,21 +201,21 @@
         frameworkUrl: buildUrl + "/CarnivalRide.framework.js",
         codeUrl: buildUrl + "/CarnivalRide.wasm",
         streamingAssetsUrl: "StreamingAssets",
-        companyName: "DefaultCompany",
-        productName: "portfolio-1-gl01998",
+        companyName: "Glow Games",
+        productName: "Demo 1 Carnival Ride",
         productVersion: "1.0",
       };
 
       var canvas = document.getElementById("unity-canvas");
-      var lookText = document.getElementById("look");
       var statusText = document.getElementById("status");
       var progress = document.getElementById("progress");
       var progressFill = document.getElementById("progress-fill");
       var switchViewButton = document.getElementById("switch-view");
       var startRideButton = document.getElementById("start-ride");
+      var dayNightButton = document.getElementById("day-night");
       var enterVRButton = document.getElementById("enter-vr");
       var unityInstance = null;
-      var rideState = null; // { seated, running } once the game reports it
+      var rideState = null; // { seated, running, night } once the game reports it
       var vrSupported = false;
       
 
@@ -232,15 +225,17 @@
         // Without state from the game, leave Start Ride on; WebBridge still refuses a bad start.
         startRideButton.disabled = !loaded || (rideState !== null && (!rideState.seated || rideState.running));
         enterVRButton.disabled = !loaded || !vrSupported;
+        // Day / night works at any time, even during the ride.
+        dayNightButton.disabled = !loaded;
+        var night = rideState !== null && rideState.night;
+        dayNightButton.textContent = night ? "Day Mode" : "Night Mode";
+        dayNightButton.setAttribute("aria-pressed", night ? "true" : "false");
 
         if (!loaded) return;
         if (rideState === null) statusText.textContent = "";
         else if (rideState.running) statusText.textContent = "Ride in progress";
         else if (rideState.seated) statusText.textContent = "Seated — ready to ride";
         else statusText.textContent = "Standing on the ground";
-
-        if (rideState == null) lookText.textContent = "";
-        else lookText.textContent = "Drag with your mouse to look";
       }
 
       // Sent by WebBridge (Assets/Plugins/WebGL/WebBridge.jslib) when seat or ride state changes.
@@ -260,6 +255,9 @@
       });
       startRideButton.addEventListener("click", function () {
         unityInstance.SendMessage("WebBridge", "StartRide");
+      });
+      dayNightButton.addEventListener("click", function () {
+        unityInstance.SendMessage("WebBridge", "ToggleNight");
       });
       enterVRButton.addEventListener("click", function () {
         unityInstance.Module.WebXR.toggleVR();
