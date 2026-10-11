@@ -222,8 +222,8 @@
       function updateControls() {
         var loaded = unityInstance !== null;
         switchViewButton.disabled = !loaded || (rideState !== null && rideState.running);
-        // Without state from the game, leave Start Ride on; WebBridge still refuses a bad start.
-        startRideButton.disabled = !loaded || (rideState !== null && (!rideState.seated || rideState.running));
+        // The ride can start from the seat or from the ground, just not twice.
+        startRideButton.disabled = !loaded || (rideState !== null && rideState.running);
         enterVRButton.disabled = !loaded || !vrSupported;
         // Day / night works at any time, even during the ride.
         dayNightButton.disabled = !loaded;
@@ -254,7 +254,9 @@
         unityInstance.SendMessage("WebBridge", "ToggleSeat");
       });
       startRideButton.addEventListener("click", function () {
-        unityInstance.SendMessage("WebBridge", "StartRide");
+        // WebBridge.StartRide refuses unless seated, so go to SceneControl directly
+        // to let the ride run while the player watches from the ground.
+        unityInstance.SendMessage("SceneControl", "StartRide");
       });
       dayNightButton.addEventListener("click", function () {
         unityInstance.SendMessage("WebBridge", "ToggleNight");
